@@ -70,7 +70,7 @@ Untuk membuat versi siap produksi (production build):
 
 Jika ada masalah saat menjalankan project, pastikan:
 
-- Node.js (termasuk npm) sudah terinstal dengan benar.
+- Node.js sudah terinstal dengan benar.
 - Anda berada di folder project yang benar.
 - Semua kebutuhan terinstal tanpa error.
 
