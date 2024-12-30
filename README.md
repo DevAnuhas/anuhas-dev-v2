@@ -101,7 +101,7 @@ Untuk melakukan konfigurasi Firebase dalam project ini, ikuti langkah berikut:
 4. **Pergi Ke Rules**
    - Ubah rulesnya jadi true
 
-5. **Buka file firebase.js dan firebase-comment.js 
+5. **Buka file firebase.js dan firebase-comment.js** 
    - Ganti isi firebaseConfig dengan config firebase anda
 
 
