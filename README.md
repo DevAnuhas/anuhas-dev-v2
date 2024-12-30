@@ -98,6 +98,9 @@ Untuk melakukan konfigurasi Firebase dalam project ini, ikuti langkah berikut:
     - Klik pada bagian : ![Screenshot 2024-12-30 214204](https://github.com/user-attachments/assets/43243cad-b414-4dd9-8793-d15c401c82fe)
     - Nanti copy isi firebas confignya ![image](https://github.com/user-attachments/assets/6d0e158c-1ae0-40c1-8b41-9e53a1c4ccbb)
 
+4. **Pergi Ke Rules**
+   - Ubah rulesnya jadi true
+
 5. **Buka file firebase.js dan firebase-comment.js 
    - Ganti isi firebaseConfig dengan config firebase anda
 
