@@ -23,8 +23,7 @@ Berikut ini adalah panduan sederhana untuk menjalankan project ini.
 
 Pastikan Anda sudah menginstal:
 
-- **Node.js** (versi 14.18 ke atas atau 16 ke atas, termasuk npm)
-- **Yarn** (opsional, jika ingin menggunakan yarn sebagai pengelola paket)
+- **Node.js** 
 
 ## Langkah-Langkah Menjalankan Project
 
@@ -36,8 +35,6 @@ Pastikan Anda sudah menginstal:
 
 2. **Install semua kebutuhan:**
 
-   Jika menggunakan npm:
-
    ```bash
    npm install
    ```
@@ -45,12 +42,6 @@ Pastikan Anda sudah menginstal:
    
     ```bash
    npm install --legacy-peer-deps
-   ```
-
-   Jika menggunakan yarn:
-
-   ```bash
-   yarn
    ```
 
 4. **Jalankan project:**
