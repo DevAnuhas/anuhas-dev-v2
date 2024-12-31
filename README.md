@@ -15,6 +15,8 @@ Tech Stack yang digunakan:
 Link Website:
 https://www.eki.my.id/
 
+We would appreciate it if you would like to use this project, please include our credit in your use. Thank You! 🙏
+
 # Tutorial Menjalankan Project
 
 Berikut ini adalah panduan sederhana untuk menjalankan project ini.
