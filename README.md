@@ -15,6 +15,8 @@ Tech Stack yang digunakan:
 Link Website:
 https://www.eki.my.id/
 
+We would appreciate it if you would like to use this project, please include our credit in your use. Thank You! 🙏
+
 # Tutorial Menjalankan Project
 
 Berikut ini adalah panduan sederhana untuk menjalankan project ini.
@@ -23,8 +25,7 @@ Berikut ini adalah panduan sederhana untuk menjalankan project ini.
 
 Pastikan Anda sudah menginstal:
 
-- **Node.js** (versi 14.18 ke atas atau 16 ke atas, termasuk npm)
-- **Yarn** (opsional, jika ingin menggunakan yarn sebagai pengelola paket)
+- **Node.js** 
 
 ## Langkah-Langkah Menjalankan Project
 
@@ -36,8 +37,6 @@ Pastikan Anda sudah menginstal:
 
 2. **Install semua kebutuhan:**
 
-   Jika menggunakan npm:
-
    ```bash
    npm install
    ```
@@ -45,12 +44,6 @@ Pastikan Anda sudah menginstal:
    
     ```bash
    npm install --legacy-peer-deps
-   ```
-
-   Jika menggunakan yarn:
-
-   ```bash
-   yarn
    ```
 
 4. **Jalankan project:**
@@ -79,7 +72,7 @@ Untuk membuat versi siap produksi (production build):
 
 Jika ada masalah saat menjalankan project, pastikan:
 
-- Node.js (termasuk npm) sudah terinstal dengan benar.
+- Node.js sudah terinstal dengan benar.
 - Anda berada di folder project yang benar.
 - Semua kebutuhan terinstal tanpa error.
 
