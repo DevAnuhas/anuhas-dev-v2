@@ -94,7 +94,11 @@ Untuk melakukan konfigurasi Firebase dalam project ini, ikuti langkah berikut:
 4. **Pergi Ke Rules**
    - Ubah rulesnya jadi true
 
-5. **Buka file firebase.js dan firebase-comment.js** 
+5. Sesuaikan Struktur Collection seperti gambar berikut
+  ![Screenshot 2025-01-03 001341](https://github.com/user-attachments/assets/38580122-08a4-4499-a8fd-0f253652a239)
+![Screenshot 2025-01-03 001410](https://github.com/user-attachments/assets/d563d7ad-f1ab-46ff-8185-640dcebd0363)
+
+6. **Buka file firebase.js dan firebase-comment.js** 
    - Ganti isi firebaseConfig dengan config firebase anda
 
 
