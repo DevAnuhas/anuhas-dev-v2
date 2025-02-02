@@ -31,17 +31,7 @@ validate_ip() {
     fi
 }
 
-# Fungsi untuk validasi domain
-validate_domain() {
-    local domain=$1
-    if [[ $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Fungsi untuk membaca input dengan timeout dan validasi
+# Fungsi untuk membaca input
 get_input() {
     local prompt="$1"
     local default="$2"
@@ -50,7 +40,6 @@ get_input() {
     local valid=false
     
     while [ "$valid" = false ]; do
-        # Gunakan /dev/tty untuk memastikan input bisa dibaca meski melalui pipe
         exec < /dev/tty
         read -p "$prompt" input
         
@@ -72,57 +61,46 @@ get_input() {
     echo "$input"
 }
 
-# Fungsi untuk mengecek status instalasi paket
-check_package_installed() {
-    dpkg -l "$1" &> /dev/null
-    return $?
-}
-
-# Fungsi untuk backup file konfigurasi
-backup_config() {
-    local file="$1"
-    if [ -f "$file" ]; then
-        cp "$file" "${file}.backup.$(date +%Y%m%d_%H%M%S)" || handle_error "Gagal backup file $file"
-    fi
-}
-
-# Fungsi untuk menginstall paket dengan retry
-install_package() {
-    local package="$1"
-    local max_attempts=3
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        log "Mencoba menginstall $package (Percobaan $attempt dari $max_attempts)"
-        if apt-get install -y "$package"; then
-            log "Berhasil menginstall $package"
-            return 0
-        fi
-        attempt=$((attempt + 1))
-        sleep 5
-    done
-    handle_error "Gagal menginstall $package setelah $max_attempts percobaan"
-}
-
 # Main script starts here
 log "Memulai konfigurasi server..."
 
-# Minta dan validasi input
-user_ip=$(get_input "Masukkan IP address (contoh: 192.168.1.1): " "" validate_ip)
-user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): " "" validate_domain)
-mysql_root_password=$(get_input "Masukkan password untuk root MySQL (min. 8 karakter): ")
-phpmyadmin_password=$(get_input "Masukkan password untuk phpMyAdmin (min. 8 karakter): ")
+# Fix untuk dpkg yang interrupted
+log "Memperbaiki package yang interrupted..."
+dpkg --configure -a || handle_error "Gagal memperbaiki dpkg yang interrupted"
 
-# Validasi panjang password
-if [ ${#mysql_root_password} -lt 8 ] || [ ${#phpmyadmin_password} -lt 8 ]; then
-    handle_error "Password harus minimal 8 karakter"
-fi
+# Minta input di awal
+user_ip=$(get_input "Masukkan IP address (contoh: 192.168.1.1): " "" validate_ip)
+user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): ")
+mysql_root_password=$(get_input "Masukkan password untuk root MySQL: ")
+phpmyadmin_password=$(get_input "Masukkan password untuk phpMyAdmin: ")
+samba_username=$(get_input "Masukkan username untuk Samba: ")
+samba_password=$(get_input "Masukkan password untuk Samba: ")
 
 # Update sistem
 log "Updating system packages..."
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y || handle_error "Gagal melakukan update sistem"
-apt-get upgrade -y || handle_error "Gagal melakukan upgrade sistem"
+
+# Bersihkan apt cache dan fix dependencies
+apt-get clean
+apt-get autoremove -y
+apt-get autoclean
+
+# Update dengan proper error handling
+if ! apt-get update -y; then
+    log "WARNING: Update gagal, mencoba fix..."
+    rm -f /var/lib/apt/lists/lock
+    rm -f /var/cache/apt/archives/lock
+    rm -f /var/lib/dpkg/lock*
+    dpkg --configure -a
+    apt-get update -y || handle_error "Gagal melakukan update sistem"
+fi
+
+# Upgrade dengan proper error handling
+if ! apt-get upgrade -y; then
+    log "WARNING: Upgrade gagal, mencoba fix..."
+    dpkg --configure -a
+    apt-get upgrade -y || handle_error "Gagal melakukan upgrade sistem"
+fi
 
 # Tambah repository universe
 add-apt-repository universe -y || handle_error "Gagal menambahkan repository universe"
@@ -138,16 +116,8 @@ debconf-set-selections <<< "phpmyadmin phpmyadmin/reconfigure-webserver multisel
 # Install paket yang diperlukan
 packages="bind9 apache2 mysql-server apache2-utils phpmyadmin samba"
 for package in $packages; do
-    if ! check_package_installed "$package"; then
-        install_package "$package"
-    fi
+    apt-get install -y $package || handle_error "Gagal menginstall $package"
 done
-
-# Backup dan konfigurasi file-file penting
-backup_config "/etc/resolv.conf"
-backup_config "/etc/bind/named.conf.default-zones"
-backup_config "/etc/apache2/sites-available/000-default.conf"
-backup_config "/etc/samba/smb.conf"
 
 # Konfigurasi DNS
 cat > /etc/resolv.conf <<EOL
@@ -160,28 +130,7 @@ EOL
 # Konfigurasi zona Bind9
 reversed_ip=$(echo "$user_ip" | awk -F. '{print $3"."$2"."$1}')
 
-cat > /etc/bind/named.conf.default-zones <<EOL
-# Default zones
-zone "localhost" {
-    type master;
-    file "/etc/bind/db.local";
-};
-
-zone "127.in-addr.arpa" {
-    type master;
-    file "/etc/bind/db.127";
-};
-
-zone "0.in-addr.arpa" {
-    type master;
-    file "/etc/bind/db.0";
-};
-
-zone "255.in-addr.arpa" {
-    type master;
-    file "/etc/bind/db.255";
-};
-
+cat > /etc/bind/named.conf.local <<EOL
 # Custom SMK zones
 zone "$user_domain" {
      type master;
@@ -231,15 +180,16 @@ EOL
 
 # Konfigurasi Apache
 cat > /etc/apache2/sites-available/000-default.conf <<EOL
-<VirtualHost $user_ip:80>
-        ServerAdmin admin@$user_domain
-        ServerName www.$user_domain
-        DocumentRoot /var/www
-        ErrorLog \${APACHE_LOG_DIR}/error.log
-        LogLevel warn
-        CustomLog \${APACHE_LOG_DIR}/access.log combined
+<VirtualHost *:80>
+        ServerAdmin webmaster@$user_domain
+        ServerName $user_domain
+        ServerAlias www.$user_domain
+        DocumentRoot /var/www/html
         
-        <Directory /var/www/>
+        ErrorLog \${APACHE_LOG_DIR}/error.log
+        CustomLog \${APACHE_LOG_DIR}/access.log combined
+
+        <Directory /var/www/html>
                 Options Indexes FollowSymLinks
                 AllowOverride All
                 Require all granted
@@ -247,9 +197,12 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOL
 </VirtualHost>
 EOL
 
+# Buat direktori dan set permissions
+mkdir -p /var/www/html
+chown -R www-data:www-data /var/www/html
+
 # Buat index.php
-mkdir -p /var/www
-cat > /var/www/index.php <<EOL
+cat > /var/www/html/index.php <<EOL
 <!DOCTYPE html>
 <html>
 <head>
@@ -266,14 +219,14 @@ cat > /var/www/index.php <<EOL
 </html>
 EOL
 
-# Set izin akses untuk /var/www dengan lebih aman
-chown -R www-data:www-data /var/www/
-find /var/www/ -type d -exec chmod 755 {} \;
-find /var/www/ -type f -exec chmod 644 {} \;
+# Set permissions
+chown -R www-data:www-data /var/www/html
+find /var/www/html -type d -exec chmod 755 {} \;
+find /var/www/html -type f -exec chmod 644 {} \;
 
 # Konfigurasi Samba
-useradd -m tamu 2>/dev/null || true
-echo -e "$phpmyadmin_password\n$phpmyadmin_password" | passwd tamu
+useradd -m $samba_username 2>/dev/null || true
+echo -e "$samba_password\n$samba_password" | passwd $samba_username
 
 cat > /etc/samba/smb.conf <<EOL
 [global]
@@ -285,41 +238,41 @@ cat > /etc/samba/smb.conf <<EOL
    dns proxy = no
 
 [www]
-   path = /var/www/
+   path = /var/www/html
    browseable = yes
    writeable = yes
-   valid users = tamu
+   valid users = $samba_username
    create mask = 0644
    directory mask = 0755
    force user = www-data
 EOL
 
-# Set Samba password untuk user tamu
-echo -e "$phpmyadmin_password\n$phpmyadmin_password" | smbpasswd -a tamu
+# Set Samba password
+echo -e "$samba_password\n$samba_password" | smbpasswd -s -a $samba_username
 
 # Konfigurasi phpMyAdmin
 echo "Include /etc/phpmyadmin/apache.conf" >> /etc/apache2/apache2.conf
 
-# Aktifkan modul Apache
-a2ensite 000-default.conf
+# Aktifkan modul Apache yang diperlukan
 a2enmod rewrite
 a2enmod ssl
+a2ensite 000-default.conf
 
-# Restart layanan dengan error handling
-services="bind9 apache2 mysql smbd"
-for service in $services; do
-    systemctl restart $service || log "WARNING: Gagal restart $service"
-    systemctl enable $service || log "WARNING: Gagal enable $service"
-done
+# Restart layanan
+systemctl restart bind9
+systemctl restart apache2
+systemctl restart smbd
+systemctl restart mysql
 
-# Test konfigurasi
-log "Testing konfigurasi..."
-apache2ctl configtest || log "WARNING: Apache config test failed"
-named-checkconf || log "WARNING: BIND config test failed"
+# Enable services at startup
+systemctl enable bind9
+systemctl enable apache2
+systemctl enable smbd
+systemctl enable mysql
 
 log "==== Konfigurasi Selesai ===="
 log "Domain: $user_domain"
 log "IP Address: $user_ip"
 log "phpMyAdmin URL: http://$user_ip/phpmyadmin"
 log "Samba share tersedia di: //$user_ip/www"
-log "Username Samba: tamu"
+log "Username Samba: $samba_username"
