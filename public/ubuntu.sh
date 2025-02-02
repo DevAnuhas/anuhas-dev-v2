@@ -1,76 +1,155 @@
 #!/bin/bash
 
+# Fungsi untuk logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Fungsi untuk error handling
+handle_error() {
+    log "ERROR: $1"
+    exit 1
+}
+
 # Pastikan script dijalankan sebagai root
 if [ "$(id -u)" != "0" ]; then
-    echo "Script harus dijalankan dengan sudo"
-    exit 1
+    handle_error "Script harus dijalankan dengan sudo"
 fi
 
-# Fungsi untuk membaca input dengan timeout
-get_input() {
-    local prompt="$1"
-    local default="$2"
-    local input
-    
-    # Gunakan /dev/tty untuk memastikan input bisa dibaca meski melalui pipe
-    exec < /dev/tty
-    read -p "$prompt" input
-    
-    if [ -z "$input" ] && [ ! -z "$default" ]; then
-        echo "$default"
+# Fungsi untuk validasi IP address
+validate_ip() {
+    local ip=$1
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        return $?
     else
-        echo "$input"
+        return 1
     fi
 }
 
-# Minta input IP dan domain dengan cara yang lebih robust
-user_ip=$(get_input "Masukkan IP address (contoh: 192.168.1.1): ")
-user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): ")
+# Fungsi untuk validasi domain
+validate_domain() {
+    local domain=$1
+    if [[ $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
-# Minta input untuk password MySQL dan phpMyAdmin
-mysql_root_password=$(get_input "Masukkan password untuk root MySQL: ")
-phpmyadmin_password=$(get_input "Masukkan password untuk phpMyAdmin: ")
+# Fungsi untuk membaca input dengan timeout dan validasi
+get_input() {
+    local prompt="$1"
+    local default="$2"
+    local validation_func="$3"
+    local input
+    local valid=false
+    
+    while [ "$valid" = false ]; do
+        # Gunakan /dev/tty untuk memastikan input bisa dibaca meski melalui pipe
+        exec < /dev/tty
+        read -p "$prompt" input
+        
+        if [ -z "$input" ] && [ ! -z "$default" ]; then
+            input="$default"
+        fi
+        
+        if [ ! -z "$validation_func" ]; then
+            if $validation_func "$input"; then
+                valid=true
+            else
+                log "Input tidak valid, silakan coba lagi"
+                continue
+            fi
+        else
+            valid=true
+        fi
+    done
+    echo "$input"
+}
 
-# Validasi input
-if [ -z "$user_ip" ] || [ -z "$user_domain" ] || [ -z "$mysql_root_password" ] || [ -z "$phpmyadmin_password" ]; then
-    echo "IP address, domain, MySQL password, dan phpMyAdmin password tidak boleh kosong. Jalankan ulang script."
-    exit 1
+# Fungsi untuk mengecek status instalasi paket
+check_package_installed() {
+    dpkg -l "$1" &> /dev/null
+    return $?
+}
+
+# Fungsi untuk backup file konfigurasi
+backup_config() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        cp "$file" "${file}.backup.$(date +%Y%m%d_%H%M%S)" || handle_error "Gagal backup file $file"
+    fi
+}
+
+# Fungsi untuk menginstall paket dengan retry
+install_package() {
+    local package="$1"
+    local max_attempts=3
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        log "Mencoba menginstall $package (Percobaan $attempt dari $max_attempts)"
+        if apt-get install -y "$package"; then
+            log "Berhasil menginstall $package"
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 5
+    done
+    handle_error "Gagal menginstall $package setelah $max_attempts percobaan"
+}
+
+# Main script starts here
+log "Memulai konfigurasi server..."
+
+# Minta dan validasi input
+user_ip=$(get_input "Masukkan IP address (contoh: 192.168.1.1): " "" validate_ip)
+user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): " "" validate_domain)
+mysql_root_password=$(get_input "Masukkan password untuk root MySQL (min. 8 karakter): ")
+phpmyadmin_password=$(get_input "Masukkan password untuk phpMyAdmin (min. 8 karakter): ")
+
+# Validasi panjang password
+if [ ${#mysql_root_password} -lt 8 ] || [ ${#phpmyadmin_password} -lt 8 ]; then
+    handle_error "Password harus minimal 8 karakter"
 fi
 
-# Tambah repository universe
-add-apt-repository universe -y
-
-# Update dengan timeout dan error handling
+# Update sistem
+log "Updating system packages..."
 export DEBIAN_FRONTEND=noninteractive
+apt-get update -y || handle_error "Gagal melakukan update sistem"
+apt-get upgrade -y || handle_error "Gagal melakukan upgrade sistem"
+
+# Tambah repository universe
+add-apt-repository universe -y || handle_error "Gagal menambahkan repository universe"
 
 # Set konfigurasi otomatis untuk MySQL dan phpMyAdmin
-echo "mysql-server mysql-server/root_password password $mysql_root_password" | debconf-set-selections
-echo "mysql-server mysql-server/root_password_again password $mysql_root_password" | debconf-set-selections
-echo "phpmyadmin phpmyadmin/dbconfig-install boolean true" | debconf-set-selections
-echo "phpmyadmin phpmyadmin/mysql/admin-pass password $mysql_root_password" | debconf-set-selections
-echo "phpmyadmin phpmyadmin/mysql/app-pass password $phpmyadmin_password" | debconf-set-selections
-echo "phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2" | debconf-set-selections
+debconf-set-selections <<< "mysql-server mysql-server/root_password password $mysql_root_password"
+debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $mysql_root_password"
+debconf-set-selections <<< "phpmyadmin phpmyadmin/dbconfig-install boolean true"
+debconf-set-selections <<< "phpmyadmin phpmyadmin/mysql/admin-pass password $mysql_root_password"
+debconf-set-selections <<< "phpmyadmin phpmyadmin/mysql/app-pass password $phpmyadmin_password"
+debconf-set-selections <<< "phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2"
 
-# Perbaikan proses update
-apt-get clean
-apt-get update -y
+# Install paket yang diperlukan
+packages="bind9 apache2 mysql-server apache2-utils phpmyadmin samba"
+for package in $packages; do
+    if ! check_package_installed "$package"; then
+        install_package "$package"
+    fi
+done
 
-# Install paket dengan timeout dan error handling
-apt-get install -y \
-    bind9 \
-    apache2 \
-    mysql-server \
-    apache2-utils \
-    phpmyadmin \
-    samba \
-    || { echo "Instalasi paket gagal. Periksa koneksi internet dan repository."; exit 1; }
-
-# Nonaktifkan update otomatis dengan cara aman
-systemctl disable apt-daily.timer
-systemctl disable apt-daily-upgrade.timer
+# Backup dan konfigurasi file-file penting
+backup_config "/etc/resolv.conf"
+backup_config "/etc/bind/named.conf.default-zones"
+backup_config "/etc/apache2/sites-available/000-default.conf"
+backup_config "/etc/samba/smb.conf"
 
 # Konfigurasi DNS
-mkdir -p /etc/bind
 cat > /etc/resolv.conf <<EOL
 nameserver $user_ip
 nameserver 8.8.8.8
@@ -119,7 +198,7 @@ EOL
 cat > /etc/bind/smk.db <<EOL
 \$TTL    604800
 @       IN      SOA     ns.$user_domain. root.$user_domain. (
-                        2         ; Serial
+                        $(date +%Y%m%d)01 ; Serial
                         604800    ; Refresh
                         86400     ; Retry
                         2419200   ; Expire
@@ -140,7 +219,7 @@ EOL
 octet=$(echo "$user_ip" | awk -F. '{print $4}')
 cat > /etc/bind/smk.ip <<EOL
 @       IN      SOA     ns.$user_domain. root.$user_domain. (
-                        2         ; Serial
+                        $(date +%Y%m%d)01 ; Serial
                         604800    ; Refresh
                         86400     ; Retry
                         2419200   ; Expire
@@ -151,9 +230,6 @@ $octet  IN      PTR     ns.$user_domain.
 EOL
 
 # Konfigurasi Apache
-mkdir -p /etc/apache2/sites-available
-mkdir -p /var/www
-
 cat > /etc/apache2/sites-available/000-default.conf <<EOL
 <VirtualHost $user_ip:80>
         ServerAdmin admin@$user_domain
@@ -162,13 +238,27 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOL
         ErrorLog \${APACHE_LOG_DIR}/error.log
         LogLevel warn
         CustomLog \${APACHE_LOG_DIR}/access.log combined
+        
+        <Directory /var/www/>
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Require all granted
+        </Directory>
 </VirtualHost>
 EOL
 
 # Buat index.php
+mkdir -p /var/www
 cat > /var/www/index.php <<EOL
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Welcome to $user_domain</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+    </style>
+</head>
 <body>
     <h1>Selamat Datang di Server $user_domain</h1>
     <?php phpinfo(); ?>
@@ -176,33 +266,38 @@ cat > /var/www/index.php <<EOL
 </html>
 EOL
 
-# Set izin akses untuk /var/www
-chmod 777 /var/www/ -R
+# Set izin akses untuk /var/www dengan lebih aman
+chown -R www-data:www-data /var/www/
+find /var/www/ -type d -exec chmod 755 {} \;
+find /var/www/ -type f -exec chmod 644 {} \;
 
-# Tambah user Samba dengan metode yang lebih robust
-echo "Tambah user Samba (username: tamu)"
-useradd tamu
-echo "Masukkan password untuk user tamu:"
-passwd tamu
+# Konfigurasi Samba
+useradd -m tamu 2>/dev/null || true
+echo -e "$phpmyadmin_password\n$phpmyadmin_password" | passwd tamu
 
-# Backup file konfigurasi samba
-cp /etc/samba/smb.conf /etc/samba/smb.conf.backup
-
-# Tambahkan konfigurasi www share di akhir file
-cat >> /etc/samba/smb.conf <<EOL
+cat > /etc/samba/smb.conf <<EOL
+[global]
+   workgroup = WORKGROUP
+   server string = Samba Server %v
+   netbios name = $(hostname)
+   security = user
+   map to guest = bad user
+   dns proxy = no
 
 [www]
-path = /var/www/
-browseable = yes
-writeable = yes
-valid users = tamu
-admin users = root
+   path = /var/www/
+   browseable = yes
+   writeable = yes
+   valid users = tamu
+   create mask = 0644
+   directory mask = 0755
+   force user = www-data
 EOL
 
-# Set password Samba untuk user tamu
-smbpasswd -a tamu
+# Set Samba password untuk user tamu
+echo -e "$phpmyadmin_password\n$phpmyadmin_password" | smbpasswd -a tamu
 
-echo "Menambahkan konfigurasi phpMyAdmin ke apache2.conf..."
+# Konfigurasi phpMyAdmin
 echo "Include /etc/phpmyadmin/apache.conf" >> /etc/apache2/apache2.conf
 
 # Aktifkan modul Apache
@@ -210,10 +305,21 @@ a2ensite 000-default.conf
 a2enmod rewrite
 a2enmod ssl
 
-# Restart layanan
-systemctl restart bind9 || true
-systemctl restart apache2 || true
-systemctl restart smbd || true
+# Restart layanan dengan error handling
+services="bind9 apache2 mysql smbd"
+for service in $services; do
+    systemctl restart $service || log "WARNING: Gagal restart $service"
+    systemctl enable $service || log "WARNING: Gagal enable $service"
+done
 
-echo "==== Konfigurasi Selesai ===="
-echo "Domain: $user_domain"
+# Test konfigurasi
+log "Testing konfigurasi..."
+apache2ctl configtest || log "WARNING: Apache config test failed"
+named-checkconf || log "WARNING: BIND config test failed"
+
+log "==== Konfigurasi Selesai ===="
+log "Domain: $user_domain"
+log "IP Address: $user_ip"
+log "phpMyAdmin URL: http://$user_ip/phpmyadmin"
+log "Samba share tersedia di: //$user_ip/www"
+log "Username Samba: tamu"
