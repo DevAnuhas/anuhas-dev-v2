@@ -31,25 +31,7 @@ validate_ip() {
     fi
 }
 
-# Fungsi untuk validasi domain
-validate_domain() {
-    local domain=$1
-    if [[ $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
 
-# Fungsi untuk validasi username
-validate_username() {
-    local username=$1
-    if [[ $username =~ ^[a-z_][a-z0-9_-]*[$]?$ ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
 
 # Fungsi untuk membaca input dengan timeout dan validasi
 get_input() {
@@ -119,11 +101,11 @@ log "Memulai konfigurasi server..."
 
 # Minta dan validasi input
 user_ip=$(get_input "Masukkan IP address (contoh: 192.168.1.1): " "" validate_ip)
-user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): " "" validate_domain)
+user_domain=$(get_input "Masukkan nama domain (contoh: smkeki.sch.id): " "" )
 mysql_root_password=$(get_input "Masukkan password untuk root MySQL: ")
 phpmyadmin_password=$(get_input "Masukkan password untuk phpMyAdmin: ")
 # Tambahan input untuk Samba
-samba_username=$(get_input "Masukkan username untuk Samba (contoh: smkuser): " "" validate_username)
+samba_username=$(get_input "Masukkan username untuk Samba (contoh: smkuser): " "")
 samba_password=$(get_input "Masukkan password untuk Samba: ")
 
 # Fix untuk dpkg yang interrupted
