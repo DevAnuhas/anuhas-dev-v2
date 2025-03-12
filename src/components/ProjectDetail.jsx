@@ -34,6 +34,7 @@ import {
 	SiFirebase,
 	SiFigma,
 	SiOpenai,
+	SiLangchain,
 	SiGoogleanalytics,
 	SiHackthebox,
 } from "@icons-pack/react-simple-icons";
@@ -64,6 +65,7 @@ const TECH_ICONS = {
 	Firebase: SiFirebase,
 	Figma: SiFigma,
 	OpenAI: SiOpenai,
+	LangChain: SiLangchain,
 	"Google Analytics": SiGoogleanalytics,
 	default: SiHackthebox,
 };
@@ -272,7 +274,7 @@ const ProjectDetails = () => {
 								)}
 							</h3>
 
-							{/* Fitur Utama */}
+							{/* Key Features */}
 							<div className="bg-white/[0.02] backdrop-blur-xl rounded-2xl p-8 border border-white/10 space-y-6 hover:border-white/20 transition-colors duration-300 group">
 								<h3 className="text-xl font-semibold text-white/90 flex items-center gap-3">
 									<Star className="w-5 h-5 text-yellow-400 group-hover:rotate-[20deg] transition-transform duration-300" />
