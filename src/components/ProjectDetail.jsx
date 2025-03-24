@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
 	Code2,
 	ExternalLink,
@@ -118,7 +118,6 @@ const handleGithubClick = (githubLink) => {
 
 const ProjectDetails = () => {
 	const { id } = useParams();
-	const navigate = useNavigate();
 	const [project, setProject] = useState(null);
 
 	useEffect(() => {
@@ -166,13 +165,13 @@ const ProjectDetails = () => {
 			<div className="relative">
 				<div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-16">
 					<div className="flex items-center space-x-2 md:space-x-4 mb-8 md:mb-12 animate-fadeIn">
-						<button
-							onClick={() => navigate(-1)}
+						<Link
+							to="/"
 							className="group inline-flex items-center space-x-1.5 md:space-x-2 px-3 md:px-5 py-2 md:py-2.5 bg-white/5 backdrop-blur-xl rounded-xl text-white/90 hover:bg-white/10 transition-all duration-300 border border-white/10 hover:border-white/20 text-sm md:text-base"
 						>
 							<ArrowLeft className="w-4 h-4 md:w-5 md:h-5 group-hover:-translate-x-1 transition-transform" />
 							<span>Back</span>
-						</button>
+						</Link>
 						<div className="flex items-center space-x-1 md:space-x-2 text-sm md:text-base text-white/50">
 							<span>Projects</span>
 							<ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
@@ -183,7 +182,7 @@ const ProjectDetails = () => {
 					<div className="grid lg:grid-cols-2 gap-8 md:gap-16">
 						<div className="space-y-6 md:space-y-10 animate-slideInLeft">
 							<div className="space-y-4 md:space-y-6">
-								<h1 className="text-3xl md:text-6xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight">
+								<h1 className="text-3xl md:text-6xl py-1 font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight">
 									{project.Title}
 								</h1>
 								<div className="relative h-1 w-16 md:w-24">
