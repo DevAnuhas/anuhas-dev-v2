@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
 	Code2,
@@ -39,6 +39,9 @@ import {
 	SiHackthebox,
 } from "@icons-pack/react-simple-icons";
 import Swal from "sweetalert2";
+
+import { db, collection } from "../firebase";
+import { getDocs } from "firebase/firestore";
 
 const TECH_ICONS = {
 	HTML5: SiHtml5,
@@ -120,22 +123,52 @@ const ProjectDetails = () => {
 	const { id } = useParams();
 	const [project, setProject] = useState(null);
 
-	useEffect(() => {
-		window.scrollTo(0, 0);
-		const storedProjects = JSON.parse(localStorage.getItem("projects")) || [];
-		const selectedProject = storedProjects.find((p) => String(p.id) === id);
+	const fetchData = useCallback(async () => {
+		try {
+			const projectCollection = collection(db, "projects");
+			const projectSnapshot = await getDocs(projectCollection);
 
-		if (selectedProject) {
-			const enhancedProject = {
-				...selectedProject,
-				Features: selectedProject.Features || [],
-				TechStack: selectedProject.TechStack || [],
-				GitHub: selectedProject.GitHub || "",
-				CompletedDate: selectedProject.CompletedDate || "",
-			};
-			setProject(enhancedProject);
+			const projectData = projectSnapshot.docs.map((doc) => ({
+				id: doc.id,
+				...doc.data(),
+				TechStack: doc.data().TechStack || [],
+			}));
+
+			// Store in localStorage
+			localStorage.setItem("projects", JSON.stringify(projectData));
+
+			return projectData;
+		} catch (error) {
+			console.error("Error fetching data:", error);
+			return [];
 		}
-	}, [id]);
+	}, []);
+
+	useEffect(() => {
+		const loadProject = async () => {
+			window.scrollTo(0, 0);
+			let storedProjects = JSON.parse(localStorage.getItem("projects")) || [];
+			if (storedProjects.length === 0) {
+				storedProjects = await fetchData();
+			}
+			console.log("Stored Projects:", storedProjects); // Debug log
+			const selectedProject = storedProjects.find((p) => String(p.id) === id);
+			console.log("Selected Project:", selectedProject); // Debug log
+
+			if (selectedProject) {
+				const enhancedProject = {
+					...selectedProject,
+					Features: selectedProject.Features || [],
+					TechStack: selectedProject.TechStack || [],
+					GitHub: selectedProject.GitHub || "",
+					CompletedDate: selectedProject.CompletedDate || "",
+				};
+				setProject(enhancedProject);
+			}
+		};
+
+		loadProject();
+	}, [id, fetchData]);
 
 	if (!project) {
 		return (
