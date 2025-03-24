@@ -51,7 +51,7 @@ const SocialLinks = () => {
 	const [github, threads] = otherLinks;
 
 	return (
-		<div className="w-full bg-gradient-to-br from-white/10 to-white/5 rounded-2xl p-6 py-8 backdrop-blur-xl">
+		<div className="w-full bg-gradient-to-br from-white/10 to-white/5 rounded-2xl p-6 py-8 backdrop-blur-xl transform transition-all duration-300 hover:shadow-[#6366f1]/10">
 			<h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
 				<span className="inline-block w-8 h-1 bg-indigo-500 rounded-full"></span>
 				Connect With Me
