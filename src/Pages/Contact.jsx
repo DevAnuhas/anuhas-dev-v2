@@ -122,7 +122,7 @@ const ContactPage = () => {
 				className="py-10 flex items-center justify-center px-[5%] md:px-0"
 				id="Contact"
 			>
-				<div className="px-[5%] grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-[45%_55%] 2xl:grid-cols-[35%_65%] gap-12">
+				<div className="px-[5%] grid grid-cols-1 lg:grid-cols-[45%_50%] gap-12">
 					<SocialLinks />
 					<div
 						data-aos="fade-right"
