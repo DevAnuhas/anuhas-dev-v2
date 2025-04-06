@@ -164,13 +164,13 @@ const AboutPage = () => {
 
 	return (
 		<div
-			className="h-auto pb-[10%] text-white overflow-hidden px-[5%] sm:px-[5%] lg:px-[10%] mt-10 sm-mt-0"
+			className="lg:container mx-auto h-auto pb-[10%] text-white overflow-hidden px-[5%] sm:px-[5%] lg:px-[10%] mt-10 sm-mt-0"
 			id="About"
 		>
 			<Header />
 
 			<div className="w-full mx-auto pt-8 sm:pt-12 relative">
-				<div className="flex flex-col-reverse lg:grid lg:grid-cols-[65%_35%] 2xl:grid-cols-[75%_25%] gap-16 lg:gap-8 items-center">
+				<div className="flex flex-col-reverse lg:grid lg:grid-cols-[65%_35%] gap-16 lg:gap-8 items-center">
 					<div className="space-y-6 text-center lg:text-left">
 						<h2
 							className="text-3xl sm:text-4xl lg:text-5xl font-bold"
