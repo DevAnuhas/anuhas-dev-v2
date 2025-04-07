@@ -9,6 +9,7 @@ import Portfolio from "./Pages/Portfolio";
 import ContactPage from "./Pages/Contact";
 import ProjectDetails from "./components/ProjectDetail";
 import WelcomeScreen from "./Pages/WelcomeScreen";
+import NotFoundPage from "./components/404";
 import { AnimatePresence } from "framer-motion";
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
@@ -80,6 +81,7 @@ function App() {
 					}
 				/>
 				<Route path="/project/:id" element={<ProjectPageLayout />} />
+				<Route path="*" element={<NotFoundPage />} />
 			</Routes>
 		</BrowserRouter>
 	);
