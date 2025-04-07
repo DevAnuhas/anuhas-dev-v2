@@ -185,7 +185,6 @@ const ProjectDetails = () => {
 
 	return (
 		<div className="min-h-screen bg-[#030014] px-[2%] sm:px-0 relative overflow-hidden">
-			{/* Background animations remain unchanged */}
 			<div className="fixed inset-0">
 				<div className="absolute -inset-[10px] opacity-20">
 					<div className="absolute top-0 -left-4 w-72 md:w-96 h-72 md:h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" />

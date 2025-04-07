@@ -130,21 +130,21 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
 										<span
 											data-aos="fade-right"
 											data-aos-delay="200"
-											className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+											className="inline-block px-1 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight"
 										>
 											Welcome
 										</span>{" "}
 										<span
 											data-aos="fade-right"
 											data-aos-delay="400"
-											className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+											className="inline-block px-1 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight"
 										>
 											To
 										</span>{" "}
 										<span
 											data-aos="fade-right"
 											data-aos-delay="600"
-											className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+											className="inline-block px-1 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight"
 										>
 											My
 										</span>
@@ -153,14 +153,14 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
 										<span
 											data-aos="fade-up"
 											data-aos-delay="800"
-											className="inline-block px-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+											className="inline-block px-1 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight"
 										>
 											Portfolio
 										</span>{" "}
 										<span
 											data-aos="fade-up"
 											data-aos-delay="1000"
-											className="inline-block px-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+											className="inline-block px-1 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight"
 										>
 											Website
 										</span>
