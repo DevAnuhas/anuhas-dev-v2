@@ -113,22 +113,28 @@ const techStacks = [
 	{ icon: "csharp.svg", language: "C#" },
 
 	// Frontend Frameworks & Libraries
-	{ icon: "reactjs.svg", language: "ReactJS" },
+	{ icon: "reactjs.svg", language: "React" },
+	{ icon: "nextjs.svg", language: "Next.js" },
 	{ icon: "redux.svg", language: "Redux" },
 	{ icon: "tailwind.svg", language: "TailwindCSS" },
-	{ icon: "shadcn.svg", language: "ShadCN" },
+	{ icon: "shadcn.svg", language: "ShadCN UI" },
+	{ icon: "framer.svg", language: "Framer" },
 
 	// Backend Frameworks & Runtimes
-	{ icon: "nodejs.svg", language: "NodeJS" },
-	{ icon: "expressjs.svg", language: "ExpressJS" },
+	{ icon: "nodejs.svg", language: "Node.js" },
+	{ icon: "expressjs.svg", language: "Express.js" },
 
 	// Databases
 	{ icon: "mysql.svg", language: "MySQL" },
+	{ icon: "postgresql.svg", language: "PostgreSQL" },
 	{ icon: "mongodb.svg", language: "MongoDB" },
 
 	// APIs & Integration
 	{ icon: "rest.svg", language: "REST APIs" },
 	{ icon: "openai.svg", language: "OpenAI" },
+	{ icon: "langchain.webp", language: "LangChain" },
+	{ icon: "stripe.svg", language: "Stripe" },
+	{ icon: "clerk.svg", language: "Clerk" },
 
 	// Version Control & Tools
 	{ icon: "git.svg", language: "Git" },
@@ -415,7 +421,7 @@ export default function FullWidthTabs() {
 				>
 					<TabPanel value={value} index={2} dir={theme.direction}>
 						<div className="container mx-auto flex justify-center items-center overflow-hidden pb-[5%] pt-4 sm:pt-0">
-							<div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 lg:gap-6 xl:gap-8 gap-4">
+							<div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 lg:gap-6 gap-4">
 								{techStacks.map((stack, index) => (
 									<div key={index} data-aos="fade-up" data-aos-duration="1000">
 										<TechStackIcon
