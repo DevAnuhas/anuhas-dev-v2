@@ -7,9 +7,9 @@ import AnimatedBackground from "./components/Background";
 import Navbar from "./components/Navbar";
 import Portfolio from "./Pages/Portfolio";
 import ContactPage from "./Pages/Contact";
-import ProjectDetails from "./components/ProjectDetail";
+import ProjectDetails from "./Pages/ProjectDetail";
 import WelcomeScreen from "./Pages/WelcomeScreen";
-import NotFoundPage from "./components/404";
+import NotFoundPage from "./Pages/NotFound";
 import { AnimatePresence } from "framer-motion";
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
